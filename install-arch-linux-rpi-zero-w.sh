@@ -16,12 +16,6 @@ url=http://os.archlinuxarm.org/os/ArchLinuxARM-rpi-latest.tar.gz
 # url=http://os.archlinuxarm.org/os/ArchLinuxARM-rpi-2-latest.tar.gz
 
 curl -L -o $archlinux -z $archlinux $url
-udiskie-umount -a
-size=$(blockdev --getsize64 $dev)
-if [ $size -gt 17948206080 ]; then
-    echo too big
-    exit 1
-fi
 parted -s $dev mklabel msdos
 parted -s $dev mkpart primary fat32 1 128
 parted -s $dev mkpart primary ext4 128 -- -1
