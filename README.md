@@ -1,6 +1,6 @@
 ## Create the SD Card
 
-(based on [this gist](https://gist.github.com/4a320f8ee5586fe6170af8051fcd9f85)
+(based on [this gist](https://gist.github.com/4a320f8ee5586fe6170af8051fcd9f85))
 
 
 # Prerequisites
