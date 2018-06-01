@@ -20,13 +20,10 @@ SSH_COPY_ID=1 # transfer public key for passwprdless login
 ## Qemu
 
 Users are added and removed in a qemu environment.
-You need to download two files from here:
-
-https://github.com/dhruvvyas90/qemu-rpi-kernel
 
 Then run in order:
 
-- install-arch-linux-rpi-zero-w.sh <sdcard>
-- setup-logins.sh <sdcard>
-- setup-wifi.sh <sdcard>
+- `install-arch-linux-rpi-zero-w.sh <sdcard>`
+- `setup-logins.sh <sdcard>`
+- `setup-wifi.sh <sdcard>`
 
