@@ -1,0 +1,40 @@
+#!/usr/bin/env expect
+set timeout -1
+set send_human {.1 .3 1 .05 2}
+
+set cmd [lindex $argv 0]
+set p1 [lindex $argv 1]
+set p2 [lindex $argv 2]
+spawn $cmd $p1 $p2
+#expect "Welcome to Arch Linux ARM"
+#expect "Reached target Login Prompts"
+expect "alarmpi login: "
+send -h "root\r"
+expect "assword: "
+send -h "root\r"
+set prompt "\[root@alarmpi ~\]#"
+#TODO
+set timeout 15
+set password "abc"
+expect -ex $prompt
+send "useradd -m regular\r"
+expect -ex $prompt
+send "passwd regular\r"
+expect {
+  -re "New password|Retype new password" {send -h $password\n ; exp_continue}
+  "passwd: password updated successfully" {puts "\nSUCCESS"}
+  timeout {puts "TIMEOUT" ; exit 1}
+}
+expect -ex $prompt
+puts "\nTransfering public key for passwordless ssh login"
+system  sshpass -p \"$password\" ssh-copy-id \
+  -p 5022 \
+  -o \"StrictHostKeyChecking no\" \
+  -o \"UserKnownHostsFile /dev/null\" \
+  -o \"PasswordAuthentication yes\" \
+  localhost
+
+send "shutdown now\r"
+set timeout 30
+expect "Power-Off"
+expect eof
