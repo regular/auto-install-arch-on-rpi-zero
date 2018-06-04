@@ -4,7 +4,9 @@ dev=$1
 
 kernel_repo=https://raw.githubusercontent.com/dhruvvyas90/qemu-rpi-kernel/master
 dtb=versatile-pb.dtb
-kernel=kernel-qemu-4.9.59-stretch
+#kernel=kernel-qemu-4.9.59-stretch
+#kernel=kernel-qemu-4.4.34-jessie
+kernel=kernel-qemu-4.9.41-stretch
 
 mkdir -p .cache
 pushd .cache

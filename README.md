@@ -27,3 +27,12 @@ Then run in order:
 - `setup-logins.sh <sdcard>`
 - `setup-wifi.sh <sdcard>`
 
+## See also
+
+http://blog.thijsbroenink.com/2015/10/emulate-file-system-with-different-architecture/
+http://blog.oddbit.com/2016/02/07/systemd-nspawn-for-fun-and-well-mostly-f/
+
+This could be used to simplify/speed up creation of user acconts (modificarions to passwd/shadow)
+
+
+

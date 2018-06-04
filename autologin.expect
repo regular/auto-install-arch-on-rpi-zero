@@ -6,25 +6,69 @@ set cmd [lindex $argv 0]
 set dev [lindex $argv 1]
 set user [lindex $argv 2]
 
+proc randomRangeString {length {chars "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789"}} {
+  set range [expr {[string length $chars]-1}]
+
+  set txt ""
+  for {set i 0} {$i < $length} {incr i} {
+    set pos [expr {int(rand()*$range)}]
+    append txt [string range $chars $pos $pos]
+  }
+  return $txt
+}
+
+proc setPassword {user {password}} {
+  send "passwd $user\r"
+  expect {
+    -re "New password|Retype new password" {send -h $password\n ; exp_continue}
+    "passwd: password updated successfully" {puts "\n** Password updated **"}
+    timeout {puts "TIMEOUT" ; exit 1}
+  }
+  expect {
+    ">fail< # " {exit 1}
+    timeout {puts "TIMEOUT" ; exit 1}
+    ">ok< # "
+  }
+}
+
+proc cli {command} {
+  send "$command\r"
+  expect {
+    ">fail< # " {exit 1}
+    timeout {puts "TIMEOUT" ; exit 1}
+    ">ok< # "
+  }
+}
+
 spawn $cmd $dev
 expect "alarmpi login: "
 send -h "root\r"
 expect "assword: "
 send -h "root\r"
 set prompt "\[root@alarmpi ~\]#"
-#TODO
+
 set timeout 15
-set password "abc"
 expect -ex $prompt
-send "useradd -m $user\r"
-expect -ex $prompt
-send "passwd $user\r"
-expect {
-  -re "New password|Retype new password" {send -h $password\n ; exp_continue}
-  "passwd: password updated successfully" {puts "\n** Password updated **"}
-  timeout {puts "TIMEOUT" ; exit 1}
-}
-expect -ex $prompt
+
+cli {PS1="\$(if [ \$? == 0 ]; then echo \>ok\<; else echo \>fail\<; fi) # "}
+cli "id -u $user || useradd -m $user"
+cli "gpasswd -a $user wheel"
+
+set rootPassword [randomRangeString 10]
+#setPassword root $rootPassword
+
+set password [randomRangeString 10]
+setPassword $user $password
+
+puts "\n** Installing sudo **\n"
+set timeout 60
+cli "pacman -Sy"
+cli "pacman --noconfirm -S sudo"
+
+set timeout 15
+cli "echo '%wheel ALL=(ALL) NOPASSWD: ALL'>/etc/sudoers.d/00-wheel"
+cli "chmod 600 /etc/sudoers.d/00-wheel"
+
 puts "\nTransfering public key for passwordless ssh login"
 system  sshpass -p \"$password\" ssh-copy-id \
   -p 5022 \
@@ -32,9 +76,16 @@ system  sshpass -p \"$password\" ssh-copy-id \
   -o \"UserKnownHostsFile /dev/null\" \
   -o \"PasswordAuthentication yes\" \
   $user@localhost
-puts "\n** Public keys transferred **"
-send "shutdown now\r"
-set timeout 30
-expect "Power-Off"
-set timeout 8
-expect eof
+puts "\n** Public keys transferred **\n"
+
+#if this works, passwordless login and passwordless sudo are working
+system ssh \
+  -o \"StrictHostKeyChecking no\" \
+  -o \"UserKnownHostsFile /dev/null\" \
+  -p 5022 $user@localhost \"sudo shutdown -r\"
+expect "The system is going down"
+set timeout 90
+expect "reboot: Restarting system"
+
+puts "$user's password: $password"
+puts "roots password: $rootPassword"
