@@ -55,6 +55,8 @@ cli {PS1="\$(if [ \$? == 0 ]; then echo \>ok\<; else echo \>fail\<; fi) # "}
 cli "id -u $user || useradd -m $user"
 cli "gpasswd -a $user wheel"
 
+cli "id -u alarm && userdel --remove alarm"
+
 set rootPassword [randomRangeString 10]
 setPassword root $rootPassword
 
