@@ -24,5 +24,5 @@ sudo mv $tmp/root/etc/fstab $tmp/fstab
 sudo umount $tmp/root
 sudo chmod 777 ${dev}
 
-./autologin.expect $(pwd)/piemu.sh $dev $NEW_USER
+./autologin.expect $(pwd)/piemu.sh $dev $NEW_USER "$ADDITIONAL_PACKAGES"
 

@@ -5,6 +5,7 @@ set send_human {.1 .3 1 .05 2}
 set cmd [lindex $argv 0]
 set dev [lindex $argv 1]
 set user [lindex $argv 2]
+set ADDITIONAL_PACKAGES [lindex $argv 3]
 
 proc randomRangeString {length {chars "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789"}} {
   set range [expr {[string length $chars]-1}]
@@ -55,7 +56,7 @@ cli "id -u $user || useradd -m $user"
 cli "gpasswd -a $user wheel"
 
 set rootPassword [randomRangeString 10]
-#setPassword root $rootPassword
+setPassword root $rootPassword
 
 set password [randomRangeString 10]
 setPassword $user $password
@@ -63,7 +64,7 @@ setPassword $user $password
 puts "\n** Installing sudo **\n"
 set timeout 60
 cli "pacman -Sy"
-cli "pacman --noconfirm -S sudo"
+cli "pacman --noconfirm -S sudo $ADDITIONAL_PACKAGES"
 
 set timeout 15
 cli "echo '%wheel ALL=(ALL) NOPASSWD: ALL'>/etc/sudoers.d/00-wheel"
@@ -88,4 +89,4 @@ set timeout 90
 expect "reboot: Restarting system"
 
 puts "$user's password: $password"
-puts "roots password: $rootPassword"
+puts "root password: $rootPassword"
