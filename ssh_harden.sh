@@ -360,8 +360,14 @@ elif [ "$1" == "q" ]; then
   quick_config
   echo "Done! Be sure to restart sshd!"
 elif [ "$1" == "a" ]; then
+  if [ $# -lt 3 ]; then
+    echo "Usage: $0 a path/to/sshd_config path/to/config"
+    exit 1
+  fi
   SSHD_CONF_LOC="$2"
-  source ./config
+  config="$3"
+  source "$(dirname $config)/$(basename $config)"
+  if ! [ -v SSH_PORT ] ; then SSH_PORT=22; fi
   auto_config
 else
   echo "Start script with 'i' for interactive mode or 'q' for quick mode."

@@ -64,7 +64,8 @@ set password [randomRangeString 10]
 setPassword $user $password
 
 puts "\n** Installing sudo **\n"
-set timeout 60
+#set timeout 600
+set timeout -1
 cli "pacman -Sy"
 cli "pacman --noconfirm -S sudo $ADDITIONAL_PACKAGES"
 
@@ -81,7 +82,7 @@ system  sshpass -p \"$password\" ssh-copy-id \
   $user@localhost
 puts "\n** Public keys transferred **\n"
 
-#if this works, passwordless login and passwordless sudo are working
+# if this works, passwordless login and passwordless sudo are working
 system ssh \
   -o \"StrictHostKeyChecking no\" \
   -o \"UserKnownHostsFile /dev/null\" \

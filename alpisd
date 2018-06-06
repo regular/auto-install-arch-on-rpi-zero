@@ -1,0 +1,36 @@
+#!/bin/sh -eu
+
+if [ $# -lt 2 ] ; then
+  echo "Usage: $0 sdcard-device config [base_rootfs]">&2
+  exit 1
+fi
+
+script_dir=$(cd `dirname $0` && pwd)
+dev=$1
+config=$2
+
+function headline {
+  echo -e "\n***\n*** $1\n***\n"
+}
+
+headline "Installing base system"
+if [ $# -gt 2 ] ; then
+  base_rootfs=$3
+  $script_dir/install-arch-linux-rpi-zero-w.sh $dev $config $base_rootfs
+else
+  $script_dir/install-arch-linux-rpi-zero-w.sh $dev $config
+fi
+
+headline "Setting up logins"
+$script_dir/setup-logins.sh $dev $config
+
+headline "Hardening ssh"
+$script_dir/setup-ssh.sh $dev $config
+
+headline "Setting up WIFI"
+$script_dir/setup-wifi.sh $dev $config
+
+headline "Setting hostname"
+$script_dir/setup-hostname.sh $dev $config
+
+headline "Done!"

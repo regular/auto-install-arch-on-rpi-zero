@@ -1,10 +1,17 @@
 #!/bin/sh -exu
-if [ "$(id -u)" == "0" ]; then
+
+if [ $# -lt 2 ] ; then
+  echo "Usage: $0 sdcard-device config [base_rootfs]">&2
+  exit 1
+fi
+
+if [ "$(id -u)" == "0" ] ; then
    echo "This script must not be run as root" 1>&2
    exit 1
 fi
 
 dev=$1
+config=$2
 tmp=$(mktemp -d)
 
 function cleanup {
@@ -12,18 +19,23 @@ function cleanup {
     sudo umount $tmp/root || true
 }
 
-if [ $# -lt 2 ] ; then
-  # RPi1/Zero (armv6h):
-  archlinux=/tmp/ArchLinuxARM-rpi-latest.tar.gz
-  url=http://os.archlinuxarm.org/os/ArchLinuxARM-rpi-latest.tar.gz
+if [ $# -lt 3 ] ; then
+  source "$(dirname $config)/$(basename $config)"
+  if ! [ -v base_rootfs ] ; then
+    # RPi1/Zero (armv6h):
+    archlinux=/tmp/ArchLinuxARM-rpi-latest.tar.gz
+    url=http://os.archlinuxarm.org/os/ArchLinuxARM-rpi-latest.tar.gz
 
-  # RPi2 (armv7h):
-  # archlinux=/tmp/ArchLinuxARM-rpi-2-latest.tar.gz
-  # url=http://os.archlinuxarm.org/os/ArchLinuxARM-rpi-2-latest.tar.gz
+    # RPi2 (armv7h):
+    # archlinux=/tmp/ArchLinuxARM-rpi-2-latest.tar.gz
+    # url=http://os.archlinuxarm.org/os/ArchLinuxARM-rpi-2-latest.tar.gz
 
-  curl -L -o $archlinux -z $archlinux $url
+    curl -L -o $archlinux -z $archlinux $url
+  else
+    archlinux=$base_rootfs
+  fi
 else
-  archlinux=$2
+  archlinux=$3
 fi
 
 if ! [ -f $archlinux ] ; then
