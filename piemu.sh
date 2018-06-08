@@ -1,6 +1,7 @@
 #!/bin/sh -exu
 
 dev=$1
+aux_disk=$2
 
 kernel_repo=https://raw.githubusercontent.com/dhruvvyas90/qemu-rpi-kernel/master
 dtb=versatile-pb.dtb
@@ -26,4 +27,5 @@ qemu-system-arm \
   -append "root=${dev}2 rootfstype=ext4 rw console=ttyAMA0" \
   -net nic -net user,hostfwd=tcp::5022-:22 \
   -drive file=$dev,format=raw \
+  -drive file=$aux_disk,format=raw,index=1 \
   -nographic

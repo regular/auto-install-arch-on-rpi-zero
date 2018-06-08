@@ -6,6 +6,8 @@ set cmd [lindex $argv 0]
 set dev [lindex $argv 1]
 set user [lindex $argv 2]
 set ADDITIONAL_PACKAGES [lindex $argv 3]
+set aux_disk [lindex $argv 4]
+set custom_script [lindex $argv 5]
 
 proc randomRangeString {length {chars "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789"}} {
   set range [expr {[string length $chars]-1}]
@@ -35,13 +37,21 @@ proc setPassword {user {password}} {
 proc cli {command} {
   send "$command\r"
   expect {
-    ">fail< # " {exit 1}
+    ">fail< # " {
+      puts "Something went wrong. You can have a look around to see what caused the problem."
+      puts "Type '+++' to continue the script."
+      interact +++ return
+    }
     timeout {puts "TIMEOUT" ; exit 1}
     ">ok< # "
   }
 }
 
-spawn $cmd $dev
+proc cli_repeat {repeat {command}} {
+  cli "n=$repeat; until $command || \[ \$n -lt 1 \] ; do n=\$((n-1)); echo \"attempts left: \$((n+1))\"; done"
+}
+
+spawn $cmd $dev $aux_disk
 expect "alarmpi login: "
 send -h "root\r"
 expect "assword: "
@@ -50,28 +60,25 @@ set prompt "\[root@alarmpi ~\]#"
 
 set timeout 15
 expect -ex $prompt
-
 cli {PS1="\$(if [ \$? == 0 ]; then echo \>ok\<; else echo \>fail\<; fi) # "}
+
 cli "id -u $user || useradd -m $user"
 cli "gpasswd -a $user wheel"
 
-cli "id -u alarm && userdel --remove alarm"
-
-set rootPassword [randomRangeString 10]
-setPassword root $rootPassword
-
-set password [randomRangeString 10]
-setPassword $user $password
+cli "id -u alarm && userdel --remove alarm || true"
 
 puts "\n** Installing sudo **\n"
 #set timeout 600
 set timeout -1
-cli "pacman -Sy"
-cli "pacman --noconfirm -S sudo $ADDITIONAL_PACKAGES"
+cli_repeat 3 "pacman -Sy"
+cli_repeat 3 "pacman --needed --noconfirm -S sudo $ADDITIONAL_PACKAGES"
 
 set timeout 15
 cli "echo '%wheel ALL=(ALL) NOPASSWD: ALL'>/etc/sudoers.d/00-wheel"
 cli "chmod 600 /etc/sudoers.d/00-wheel"
+
+set password [randomRangeString 10]
+setPassword $user $password
 
 puts "\nTransfering public key for passwordless ssh login"
 system  sshpass -p \"$password\" ssh-copy-id \
@@ -82,7 +89,19 @@ system  sshpass -p \"$password\" ssh-copy-id \
   $user@localhost
 puts "\n** Public keys transferred **\n"
 
+puts "\n** Running custom script **\n"
+cli "mkdir -p /tmp/import"
+cli "mount /dev/sdb /tmp/import"
+cli "chown -R $user:$user /tmp/import"
+cli "chmod +x /tmp/import/$custom_script"
+set timeout -1
+cli "sudo -i -u $user bash -c \"set -xe && cd /tmp/import && source ./$custom_script\""
+
+set rootPassword [randomRangeString 10]
+setPassword root $rootPassword
+
 # if this works, passwordless login and passwordless sudo are working
+set timeout 15
 system ssh \
   -o \"StrictHostKeyChecking no\" \
   -o \"UserKnownHostsFile /dev/null\" \
