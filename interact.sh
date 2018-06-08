@@ -16,10 +16,6 @@ dev=$1
 config=$2
 
 source "$(dirname $config)/$(basename $config)"
-if ! [ -v NEW_USER ]; then NEW_USER=$USER; fi
-if ! [ -v ADDITIONAL_PACKAGES ]; then ADDITIONAL_PACKAGES=""; fi
-if ! [ -v IMPORT_FILES ]; then IMPORT_FILES=""; fi
-if ! [ -v CUSTOM_SCRIPT ]; then CUSTOM_SCRIPT=""; fi
 
 tmp=$(mktemp -d)
 
@@ -52,10 +48,8 @@ sudo mv $tmp/root/etc/fstab $tmp/fstab
 sudo umount $tmp/root
 sudo chmod 777 ${dev}
 
-"$script_dir/autologin.expect" \
+"$script_dir/interact.expect" \
   "$script_dir/piemu.sh" \
   "$dev" \
   "$NEW_USER" \
-  "$ADDITIONAL_PACKAGES" \
-  "$tmp/disk" \
-  "$(basename "$CUSTOM_SCRIPT")"
+  "$tmp/disk"

@@ -9,28 +9,35 @@ script_dir=$(cd `dirname $0` && pwd)
 dev=$1
 config=$2
 
+logfile="$(basename $0)-$(date +%F_%H%M%S).log"
+echo "command line: $@" > $logfile
+
+function log {
+  echo "[$(date +%H:%M:%S)] $@" >> $logfile 
+}
+
 function headline {
-  echo -e "\n***\n*** $1\n***\n"
+  echo -e "\n***\n*** $1\n***\n" | tee -a $logfile
 }
 
 headline "Installing base system"
 if [ $# -gt 2 ] ; then
   base_rootfs=$3
-  $script_dir/install-arch-linux-rpi-zero-w.sh $dev $config $base_rootfs
+  $script_dir/install-arch-linux-rpi-zero-w.sh $dev $config $base_rootfs | tee -a $logfile
 else
-  $script_dir/install-arch-linux-rpi-zero-w.sh $dev $config
+  $script_dir/install-arch-linux-rpi-zero-w.sh $dev $config | tee -a $logfile
 fi
 
 headline "Setting up logins"
-$script_dir/setup-logins.sh $dev $config
+$script_dir/setup-logins.sh $dev $config | tee -a $logfile
 
 headline "Hardening ssh"
-$script_dir/setup-ssh.sh $dev $config
+$script_dir/setup-ssh.sh $dev $config | tee -a $logfile
 
 headline "Setting up WIFI"
-$script_dir/setup-wifi.sh $dev $config
+$script_dir/setup-wifi.sh $dev $config | tee -a $logfile
 
 headline "Setting hostname"
-$script_dir/setup-hostname.sh $dev $config
+$script_dir/setup-hostname.sh $dev $config | tee -a $logfile
 
 headline "Done!"
