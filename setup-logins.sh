@@ -38,7 +38,7 @@ mkfs.ext4 $tmp/disk
 sudo mount -o loop $tmp/disk $tmp/aux
 trap cleanup EXIT
 
-if ! [ -z IMPORT_FILES && -z CUSTOM_SCRIPT ]; then 
+if ! [ -z IMPORT_FILES -a -z CUSTOM_SCRIPT ]; then 
   sudo cp -r "$CUSTOM_SCRIPT" $IMPORT_FILES $tmp/aux
 fi
 sudo umount $tmp/aux || true
