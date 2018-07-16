@@ -1,4 +1,5 @@
-#!/bin/sh -eu
+#!/usr/bin/bash -eu
+set -o pipefail
 
 if [ $# -lt 2 ] ; then
   echo "Usage: $0 sdcard-device config [base_rootfs]">&2
@@ -20,24 +21,28 @@ function headline {
   echo -e "\n***\n*** $1\n***\n" | tee -a $logfile
 }
 
+source "$config"
+
 headline "Installing base system"
 if [ $# -gt 2 ] ; then
   base_rootfs=$3
-  $script_dir/install-arch-linux-rpi-zero-w.sh $dev $config $base_rootfs | tee -a $logfile
+  $script_dir/install-arch-linux-rpi-zero-w.sh $dev $config $base_rootfs 2>&1 | tee -a $logfile
 else
-  $script_dir/install-arch-linux-rpi-zero-w.sh $dev $config | tee -a $logfile
+  $script_dir/install-arch-linux-rpi-zero-w.sh $dev $config 2>&1 | tee -a $logfile
 fi
 
 headline "Setting up logins"
-$script_dir/setup-logins.sh $dev $config | tee -a $logfile
+$script_dir/setup-logins.sh $dev $config 2>&1 | tee -a $logfile
 
 headline "Hardening ssh"
-$script_dir/setup-ssh.sh $dev $config | tee -a $logfile
+$script_dir/setup-ssh.sh $dev $config 2>&1 | tee -a $logfile
 
-headline "Setting up WIFI"
-$script_dir/setup-wifi.sh $dev $config | tee -a $logfile
+if [ -v WIFI_SSID ]; then
+  headline "Setting up WIFI"
+  $script_dir/setup-wifi.sh $dev $config 2>&1 | tee -a $logfile
+fi
 
 headline "Setting hostname"
-$script_dir/setup-hostname.sh $dev $config | tee -a $logfile
+$script_dir/setup-hostname.sh $dev $config 2>&1 | tee -a $logfile
 
 headline "Done!"

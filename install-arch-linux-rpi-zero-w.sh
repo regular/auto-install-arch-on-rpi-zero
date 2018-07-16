@@ -26,9 +26,11 @@ if [ $# -lt 3 ] ; then
     archlinux=/tmp/ArchLinuxARM-rpi-latest.tar.gz
     url=http://os.archlinuxarm.org/os/ArchLinuxARM-rpi-latest.tar.gz
 
-    # RPi2 (armv7h):
-    # archlinux=/tmp/ArchLinuxARM-rpi-2-latest.tar.gz
-    # url=http://os.archlinuxarm.org/os/ArchLinuxARM-rpi-2-latest.tar.gz
+    if [ -v RPI_MODEL -a $RPI_MODEL -eq "2" ]; then
+      # RPi2 (armv7h):
+      archlinux=/tmp/ArchLinuxARM-rpi-2-latest.tar.gz
+      url=http://os.archlinuxarm.org/os/ArchLinuxARM-rpi-2-latest.tar.gz
+    fi
 
     curl -L -o $archlinux -z $archlinux $url
   else

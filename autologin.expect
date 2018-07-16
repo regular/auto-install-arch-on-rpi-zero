@@ -34,25 +34,28 @@ proc setPassword {user {password}} {
   }
 }
 
-proc cli {command} {
+proc cli { command {repeat 0} } {
   send "$command\r"
   expect {
     ">fail< # " {
-      puts "Something went wrong. You can have a look around to see what caused the problem."
-      puts "Type '+++' to continue the script."
-      interact +++ return
+      if { $repeat } {
+        puts "Retrying, $repeat attempts left.\n"
+        incr repeat -1
+        send "$command\r"
+        exp_continue
+      } else {
+        puts "Something went wrong. You can have a look around to see what caused the problem."
+        puts "Type '+++' to continue the script."
+        interact +++ return
+      }
     }
     timeout {puts "TIMEOUT" ; exit 1}
     ">ok< # "
   }
 }
 
-proc cli_repeat {repeat {command}} {
-  cli "n=$repeat; until $command || \[ \$n -lt 1 \] ; do n=\$((n-1)); echo \"attempts left: \$((n+1))\"; done"
-}
-
 spawn $cmd $dev $aux_disk
-expect "alarmpi login: "
+expect " login: "
 send -h "root\r"
 expect "assword: "
 send -h "root\r"
@@ -70,8 +73,9 @@ cli "id -u alarm && userdel --remove alarm || true"
 puts "\n** Installing sudo **\n"
 #set timeout 600
 set timeout -1
-cli_repeat 3 "pacman -Sy"
-cli_repeat 3 "pacman --needed --noconfirm -S sudo $ADDITIONAL_PACKAGES"
+cli "pacman -Sy" 3
+cli "pacman --noconfirm -R pkg-config || true"
+cli "pacman --needed --noconfirm -S sudo $ADDITIONAL_PACKAGES" 3
 
 set timeout 15
 cli "echo '%wheel ALL=(ALL) NOPASSWD: ALL'>/etc/sudoers.d/00-wheel"
@@ -89,13 +93,18 @@ system  sshpass -p \"$password\" ssh-copy-id \
   $user@localhost
 puts "\n** Public keys transferred **\n"
 
-puts "\n** Running custom script **\n"
-cli "mkdir -p /tmp/import"
-cli "mount /dev/sdb /tmp/import"
-cli "chown -R $user:$user /tmp/import"
-cli "chmod +x /tmp/import/$custom_script"
-set timeout -1
-cli "sudo -i -u $user bash -c \"set -xe && cd /tmp/import && source ./$custom_script\""
+if {$custom_script eq ""} {
+  puts "\n** No custom script specified **\n"
+} else {
+  puts "\n** Running custom script **\n"
+  cli "mkdir -p /tmp/import"
+  cli "mount /dev/sdb /tmp/import"
+  cli "chown -R $user:$user /tmp/import"
+  cli "chmod +x /tmp/import/$custom_script"
+  set timeout -1
+  cli "sudo -i -u $user bash -c \"set -xe && cd /tmp/import && source ./$custom_script\""
+  cli "umount /tmp/import"
+}
 
 set rootPassword [randomRangeString 10]
 setPassword root $rootPassword

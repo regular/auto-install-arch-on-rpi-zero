@@ -16,13 +16,22 @@ dev=$1
 config=$2
 
 source "$(dirname $config)/$(basename $config)"
+if ! [ -v NEW_USER ]; then NEW_USER=$USER; fi
+if ! [ -v IMPORT_FILES ]; then IMPORT_FILES=""; fi
+if ! [ -v CUSTOM_SCRIPT ]; then CUSTOM_SCRIPT=""; fi
 
 tmp=$(mktemp -d)
 
 function cleanup {
+  sync
+  sudo umount $tmp/boot || true
+  sudo umount $tmp/root || true
   sudo umount $tmp/aux || true
   sudo mount ${dev}2 $tmp/root || true
   sudo mv $tmp/fstab $tmp/root/etc/fstab || true
+  sudo mount ${dev}1 $tmp/boot || true
+  sudo cp -r $tmp/root/boot/* $tmp/boot
+  sudo umount $tmp/boot || true
   sudo umount $tmp/root || true
   sudo chmod 700 ${dev}
 }
@@ -35,15 +44,20 @@ sudo mount -o loop $tmp/disk $tmp/aux
 trap cleanup EXIT
 
 if ! [ -z IMPORT_FILES -a -z CUSTOM_SCRIPT ]; then 
-  sudo cp -r "$CUSTOM_SCRIPT" $IMPORT_FILES $tmp/aux
+  sudo cp -r $CUSTOM_SCRIPT $IMPORT_FILES $tmp/aux
 fi
 sudo umount $tmp/aux || true
 
+# copy boot files
+mkdir -p $tmp/root
+sudo mount ${dev}2 $tmp/root
+mkdir -p $tmp/boot
+sudo mount ${dev}1 $tmp/boot
+sudo cp -r $tmp/boot/* $tmp/root/boot
+sudo umount $tmp/boot
 # move fstab out of the way, so
 # we dont timeout on waiting for 
 # mmc....
-mkdir -p $tmp/root
-sudo mount ${dev}2 $tmp/root
 sudo mv $tmp/root/etc/fstab $tmp/fstab
 sudo umount $tmp/root
 sudo chmod 777 ${dev}
